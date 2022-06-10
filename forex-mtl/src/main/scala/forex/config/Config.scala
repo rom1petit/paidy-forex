@@ -2,10 +2,14 @@ package forex.config
 
 import cats.effect.Sync
 import fs2.Stream
-import pureconfig.ConfigSource
+import org.http4s.Uri
 import pureconfig.generic.auto._
+import pureconfig.{ConfigReader, ConfigSource}
 
 object Config {
+
+  implicit val uriReader: ConfigReader[Uri] =
+    ConfigReader[String].map(Uri.unsafeFromString)
 
   /**
     * @param path the property path inside the default configuration

@@ -7,11 +7,9 @@ import forex.programs._
 import forex.services._
 import org.http4s._
 import org.http4s.implicits._
-import org.http4s.server.middleware.{ AutoSlash, Timeout }
+import org.http4s.server.middleware.{AutoSlash, Timeout}
 
-class Module[F[_]: Async](config: ApplicationConfig) {
-
-  private val ratesService: RatesService[F] = RatesServices.dummy[F]
+class Module[F[_]: Async](config: ApplicationConfig, ratesService: RatesService[F]) {
 
   private val ratesProgram: RatesProgram[F] = RatesProgram[F](ratesService)
 

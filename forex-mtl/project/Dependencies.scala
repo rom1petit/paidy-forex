@@ -12,6 +12,7 @@ object Dependencies {
 
     val kindProjector  = "0.10.3"
     val logback        = "1.2.3"
+    val scalaLogging   = "3.9.4"
     val scalaCheck     = "1.15.3"
     val scalaTest      = "3.2.7"
     val catsScalaCheck = "0.3.0"
@@ -39,7 +40,8 @@ object Dependencies {
     lazy val kindProjector = "org.typelevel" %% "kind-projector" % Versions.kindProjector
 
     // Runtime
-    lazy val logback = "ch.qos.logback" % "logback-classic" % Versions.logback
+    lazy val logback = "ch.qos.logback"             % "logback-classic" % Versions.logback
+    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging"  % Versions.scalaLogging
 
     // Test
     lazy val scalaTest      = "org.scalatest"     %% "scalatest"                      % Versions.scalaTest
@@ -63,6 +65,7 @@ object Dependencies {
       Libraries.circeParser,
       Libraries.pureConfig,
       Libraries.logback,
+      Libraries.scalaLogging,
       Libraries.scalaTestPlus  % Test,
       Libraries.scalaTest      % Test,
       Libraries.scalaCheck     % Test,

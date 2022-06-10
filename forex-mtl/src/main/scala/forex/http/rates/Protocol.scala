@@ -26,7 +26,7 @@ object Protocol {
 
   implicit val currencyEncoder: Encoder[Currency] =
     Encoder.instance[Currency] { show.show _ andThen Json.fromString }
-  implicit val currencyDeoder: Decoder[Currency] =
+  implicit val currencyDecoder: Decoder[Currency] =
     Decoder[String].map(Currency.fromString)
 
   implicit val pairEncoder: Encoder[Pair] =
@@ -41,5 +41,7 @@ object Protocol {
 
   implicit val responseEncoder: Encoder[GetApiResponse] =
     deriveConfiguredEncoder[GetApiResponse]
+  implicit val responseDecoder: Decoder[GetApiResponse] =
+    deriveConfiguredDecoder[GetApiResponse]
 
 }

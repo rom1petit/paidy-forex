@@ -1,5 +1,8 @@
 package forex.domain
 
+import cats.Show
+import cats.implicits.showInterpolator
+
 case class Rate(
     pair: Rate.Pair,
     price: Price,
@@ -11,4 +14,8 @@ object Rate {
       from: Currency,
       to: Currency
   )
+
+  implicit val show: Show[Pair] = Show.show { pair =>
+    show"${pair.from}/${pair.to}"
+  }
 }

@@ -1,6 +1,7 @@
 package forex.domain
 
 import cats.Show
+import forex.programs.rates.errors.Error.IllegalArgument
 
 sealed trait Currency
 
@@ -29,17 +30,18 @@ object Currency {
   }
 
   def fromString(s: String): Currency = s.toUpperCase match {
-    case "AUD" => AUD
-    case "CAD" => CAD
-    case "CHF" => CHF
-    case "EUR" => EUR
-    case "GBP" => GBP
-    case "NZD" => NZD
-    case "JPY" => JPY
-    case "SGD" => SGD
-    case "USD" => USD
+    case "AUD"     => AUD
+    case "CAD"     => CAD
+    case "CHF"     => CHF
+    case "EUR"     => EUR
+    case "GBP"     => GBP
+    case "NZD"     => NZD
+    case "JPY"     => JPY
+    case "SGD"     => SGD
+    case "USD"     => USD
+    case otherwise => throw IllegalArgument(s"Unsupported currency code `$otherwise`")
   }
 
-  val Values = Set(AUD, CAD, CHF, EUR, GBP, NZD, JPY, SGD, USD)
+  val Values: Set[Currency] = Set(AUD, CAD, CHF, EUR, GBP, NZD, JPY, SGD, USD)
 
 }
