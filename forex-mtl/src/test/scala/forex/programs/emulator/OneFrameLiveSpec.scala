@@ -28,7 +28,7 @@ class OneFrameLiveSpec extends AnyFlatSpec with OneFrameServiceEmulator {
       .use(service => service.get(pair))
       .map {
         case Left(value) => fail(s"Unexpected error ${value}")
-        case Right(_)    => ()
+        case Right(rate) => rate.pair shouldBe pair
       }
       .unsafeRunSync()
   }
