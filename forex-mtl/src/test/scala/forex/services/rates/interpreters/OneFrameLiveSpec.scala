@@ -24,7 +24,7 @@ class OneFrameLiveSpec extends AnyFlatSpec with OneFrameServiceEmulator {
 
     val pair = Pair(Currency.USD, Currency.JPY)
 
-    serviceResource
+    oneFrameLive
       .use(service => service.get(pair))
       .map {
         case Left(value) => fail(s"Unexpected error $value")

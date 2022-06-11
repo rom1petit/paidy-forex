@@ -21,7 +21,7 @@ trait OneFrameServiceEmulator extends TestSuite with Matchers with BeforeAndAfte
     IO(Uri.unsafeFromString(s"http://localhost:$port"))
       .map(endpoint => OneFrameClientConfig(endpoint, "10dc303535874aeccc86a8251e6992f5"))
 
-  val serviceResource =
+  val oneFrameLive =
     for {
       config <- configIO.toResource
       client <- BlazeClientBuilder[IO].resource
