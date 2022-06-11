@@ -30,6 +30,7 @@ object Dependencies {
     lazy val http4sServer    = http4s("http4s-blaze-server")
     lazy val http4sClient    = http4s("http4s-blaze-client")
     lazy val http4sCirce     = http4s("http4s-circe")
+    lazy val tsec            = "io.github.jmcardon" %% "tsec-http4s" % "0.4.0"
     lazy val circeCore       = circe("circe-core")
     lazy val circeGeneric    = circe("circe-generic")
     lazy val circeGenericExt = circe("circe-generic-extras")
@@ -55,6 +56,7 @@ object Dependencies {
       Libraries.cats,
       Libraries.catsEffect,
       Libraries.fs2,
+      Libraries.tsec,
       Libraries.http4sDsl,
       Libraries.http4sServer,
       Libraries.http4sClient,

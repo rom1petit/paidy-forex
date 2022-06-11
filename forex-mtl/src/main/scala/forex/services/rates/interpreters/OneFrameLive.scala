@@ -1,19 +1,18 @@
 package forex.services.rates.interpreters
 
-import cats.Applicative
 import cats.effect.kernel.Async
 import cats.implicits._
 import forex.config.OneFrameClientConfig
-import forex.domain.{ Price, Rate, Timestamp }
+import forex.domain.{Price, Rate, Timestamp}
 import forex.services.rates.Algebra
 import forex.services.rates.errors._
-import forex.services.rates.interpreters.OneFrameLive.{ convert, getPairRatesRequest, unique }
-import Protocol._
+import forex.services.rates.interpreters.OneFrameLive.{convert, getPairRatesRequest, unique}
+import forex.services.rates.interpreters.Protocol._
 import org.http4s.Header.Raw
 import org.http4s.Method.GET
 import org.http4s.circe.CirceSensitiveDataEntityDecoder.circeEntityDecoder
 import org.http4s.client.Client
-import org.http4s.{ Headers, Request, Uri }
+import org.http4s.{Headers, Request, Uri}
 import org.typelevel.ci.CIString
 
 class OneFrameLive[F[_]: Async](
@@ -28,7 +27,7 @@ class OneFrameLive[F[_]: Async](
     client.run(request).use { response =>
       response
         .as[List[OneFrame]]
-        .flatMap(unique[F, OneFrame](_, Error.OneFrameLookupFailed(show"Pair `$pair` not found")))
+        .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` rates not found")))
         .map(_.map(convert))
     }
   }
@@ -43,11 +42,8 @@ object OneFrameLive {
       Timestamp(frame.timeStamp)
     )
 
-  def unique[F[_]: Applicative, A](values: List[A], ifNone: Error): F[Error Either A] =
-    values match {
-      case head :: _ => Applicative[F].pure(Right(head))
-      case Nil       => Applicative[F].pure(Left(ifNone))
-    }
+  def unique[A](values: Iterable[A], ifEmpty: Error): Error Either A =
+    values.headOption.toRight(ifEmpty)
 
   def getPairRatesRequest[F[_]](base: Uri, token: String, pair: Rate.Pair): Request[F] = {
 

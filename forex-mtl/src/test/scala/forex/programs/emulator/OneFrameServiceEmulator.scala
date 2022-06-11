@@ -7,19 +7,11 @@ import forex.config.OneFrameClientConfig
 import forex.services.rates.interpreters.OneFrameLive
 import org.http4s.Uri
 import org.http4s.blaze.client.BlazeClientBuilder
-import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, TestSuite}
 import org.testcontainers.containers.wait.strategy.Wait
 
-trait OneFrameServiceEmulator
-    extends TestSuite
-    with Matchers
-    with BeforeAndAfterAll
-    with ForAllTestContainer
-    with Eventually
-    with IntegrationPatience
-    with ScalaFutures {
+trait OneFrameServiceEmulator extends TestSuite with Matchers with BeforeAndAfterAll with ForAllTestContainer {
 
   override val container: GenericContainer = OneFrameServiceEmulator.oneFrameServiceContainer()
 

@@ -29,17 +29,17 @@ object Currency {
     case USD => "USD"
   }
 
-  def fromString(s: String): Currency = s.toUpperCase match {
-    case "AUD"     => AUD
-    case "CAD"     => CAD
-    case "CHF"     => CHF
-    case "EUR"     => EUR
-    case "GBP"     => GBP
-    case "NZD"     => NZD
-    case "JPY"     => JPY
-    case "SGD"     => SGD
-    case "USD"     => USD
-    case otherwise => throw IllegalArgument(s"Unsupported currency code `$otherwise`")
+  def fromString(s: String): Either[IllegalArgument, Currency] = s.toUpperCase match {
+    case "AUD"     => Right(AUD)
+    case "CAD"     => Right(CAD)
+    case "CHF"     => Right(CHF)
+    case "EUR"     => Right(EUR)
+    case "GBP"     => Right(GBP)
+    case "NZD"     => Right(NZD)
+    case "JPY"     => Right(JPY)
+    case "SGD"     => Right(SGD)
+    case "USD"     => Right(USD)
+    case otherwise => Left(IllegalArgument(s"Unsupported currency code `$otherwise`"))
   }
 
   val Values: Set[Currency] = Set(AUD, CAD, CHF, EUR, GBP, NZD, JPY, SGD, USD)

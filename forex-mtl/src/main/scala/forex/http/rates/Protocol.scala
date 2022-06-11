@@ -1,6 +1,7 @@
 package forex.http
 package rates
 
+import cats.implicits.toBifunctorOps
 import forex.domain.Currency.show
 import forex.domain.Rate.Pair
 import forex.domain._
@@ -27,7 +28,7 @@ object Protocol {
   implicit val currencyEncoder: Encoder[Currency] =
     Encoder.instance[Currency] { show.show _ andThen Json.fromString }
   implicit val currencyDecoder: Decoder[Currency] =
-    Decoder[String].map(Currency.fromString)
+    Decoder[String].emap(s => Currency.fromString(s).leftMap(_.msg))
 
   implicit val pairEncoder: Encoder[Pair] =
     deriveConfiguredEncoder[Pair]
