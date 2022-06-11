@@ -8,7 +8,7 @@ import forex.programs.emulator.OneFrameServiceEmulator
 import org.http4s.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 
-class OneFrameLiveSpec extends AnyFlatSpec with OneFrameServiceEmulator {
+class OneFrameLiveIntegrationSpec extends AnyFlatSpec with OneFrameServiceEmulator {
 
   it should "successfully build OneFrameService request" in {
 

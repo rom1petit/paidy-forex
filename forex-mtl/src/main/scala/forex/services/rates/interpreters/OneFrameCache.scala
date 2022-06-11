@@ -36,7 +36,7 @@ object OneFrameCache {
     val age = Duration.between(rate.timestamp.value, now).toScala
 
     if (age > rateExpiry) {
-      Left(Error.OneFrameLookupFailed(show"Pair `${rate.pair}` rates expired `$age` > `$rateExpiry`"))
+      Left(Error.OneFrameLookupFailed(show"Pair `${rate.pair}` rate expired: `${age.toMillis} ms` > `${rateExpiry.toMillis} ms`"))
     } else {
       Right(rate)
     }
