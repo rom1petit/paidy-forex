@@ -6,7 +6,8 @@ import scala.concurrent.duration.FiniteDuration
 
 case class ApplicationConfig(
     http: HttpConfig,
-    oneFrameClient: OneFrameClientConfig
+    oneFrameClient: OneFrameClientConfig,
+    rateExpiry: FiniteDuration
 )
 
 case class HttpConfig(

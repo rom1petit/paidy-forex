@@ -75,7 +75,11 @@ class ModuleSpec extends AnyFlatSpec {
 
   trait Scope {
     val config =
-      ApplicationConfig(HttpConfig("####", 0, 1.second), OneFrameClientConfig(Uri.unsafeFromString("/"), ""))
+      ApplicationConfig(
+        HttpConfig("####", 0, 1.second),
+        OneFrameClientConfig(Uri.unsafeFromString("/"), ""),
+        5.minutes
+      )
 
     def module =
       new Module[IO](config, new Application[IO].buildSecurity().unsafeRunSync(), new OneFrameDummy())

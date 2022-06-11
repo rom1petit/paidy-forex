@@ -5,7 +5,6 @@ import cats.implicits._
 import forex.Main.{DummyToken, DummyUser}
 import forex.config._
 import forex.domain.Rate
-import forex.http.HttpErrorHandler
 import forex.http.security.BearerTokenAuth.BearerTokenHandler
 import forex.http.security.{BearerTokenAuth, User}
 import forex.services.RatesServices
@@ -47,19 +46,31 @@ class Application[F[_]: Async] {
       BearerTokenAuth.build[F](userStorage, tokenStorage)
     }
 
+  def buildModule(config: ApplicationConfig): Resource[F, Module[F]] =
+    for {
+      client <- BlazeClientBuilder[F].resource
+      security <- Resource.eval(buildSecurity())
+      cache <- Resource.eval(Ref[F].of(Map.empty[Rate.Pair, Rate]))
+
+    } yield {
+      val liveRatesService = RatesServices.mixed[F](
+        forex.services.time.Clock(),
+        config.rateExpiry,
+        cache,
+        config.oneFrameClient,
+        client
+      )
+      new Module[F](config, security, liveRatesService)
+    }
+
   def stream(ec: ExecutionContext): Stream[F, Unit] =
     for {
       config <- Config.stream("app")
-      client <- BlazeClientBuilder[F].stream
-      security <- Stream.eval(buildSecurity())
-      cache <- Stream.eval(Ref[F].of(Map.empty[Rate.Pair, Rate]))
-      liveRatesService = RatesServices.mixed[F](forex.services.time.Clock(), cache, config.oneFrameClient, client)
-      module           = new Module[F](config, security, liveRatesService)
+      module <- Stream.resource(buildModule(config))
       _ <- BlazeServerBuilder[F]
             .withExecutionContext(ec)
             .bindHttp(config.http.port, config.http.host)
             .withHttpApp(module.httpApp)
-            .withServiceErrorHandler(new HttpErrorHandler[F]())
             .serve
     } yield ()
 }

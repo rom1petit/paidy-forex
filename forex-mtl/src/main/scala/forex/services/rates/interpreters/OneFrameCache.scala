@@ -10,11 +10,13 @@ import forex.services.rates.interpreters.OneFrameCache.invalidate
 import forex.services.rates.interpreters.OneFrameLive.unique
 import forex.services.time.Clock
 
-import java.time.{Duration, OffsetDateTime}
-import scala.concurrent.duration.DurationInt
+import java.time.{ Duration, OffsetDateTime }
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.DurationConverters._
 
 class OneFrameCache[F[_]: Async](
     clock: Clock,
+    rateExpiry: FiniteDuration,
     cache: Ref[F, Map[Rate.Pair, Rate]]
 ) extends Algebra[F] {
 
@@ -25,15 +27,18 @@ class OneFrameCache[F[_]: Async](
     cache.get
       .map(_.get(pair))
       .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` not found")))
-      .map(_.flatMap(invalidate(clock.now())))
+      .map(_.flatMap(invalidate(rateExpiry, clock.now())))
 }
 
 object OneFrameCache {
 
-  def invalidate(now: OffsetDateTime)(rate: Rate): Error Either Rate =
-    if (Duration.between(rate.timestamp.value, now).toSeconds > 5.minutes.toSeconds) {
-      Left(Error.OneFrameLookupFailed(show"Pair `${rate.pair}` rates expired"))
+  def invalidate(rateExpiry: FiniteDuration, now: OffsetDateTime)(rate: Rate): Error Either Rate = {
+    val age = Duration.between(rate.timestamp.value, now).toScala
+
+    if (age > rateExpiry) {
+      Left(Error.OneFrameLookupFailed(show"Pair `${rate.pair}` rates expired `$age` > `$rateExpiry`"))
     } else {
       Right(rate)
     }
+  }
 }
