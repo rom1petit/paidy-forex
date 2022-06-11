@@ -25,7 +25,7 @@ class OneFrameCacheSpec extends AnyFlatSpec {
 
     val now = OffsetDateTime.parse("2022-06-08T22:08:44.621Z")
 
-    val rate = Rate(Pair(Currency.USD, Currency.JPY), Price(1.0), Timestamp(now.plusMinutes(1)))
+    val rate = Rate(Pair(Currency.USD, Currency.JPY), Price(1.0), Timestamp(now.minusMinutes((1))))
 
     OneFrameCache.invalidate(1.minute, now)(rate) shouldBe Right(rate)
   }
