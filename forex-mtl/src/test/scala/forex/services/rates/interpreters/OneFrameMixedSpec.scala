@@ -21,7 +21,7 @@ class OneFrameMixedSpec extends AnyFlatSpec with OneFrameServiceEmulator {
         .unsafeRunSync()
 
     data.size shouldBe 100
-    data.toSet shouldBe 1
+    data.toSet.size shouldBe 1
 
   }
 
@@ -32,7 +32,7 @@ class OneFrameMixedSpec extends AnyFlatSpec with OneFrameServiceEmulator {
         for {
           cacheStorage <- Resource.eval(Ref[IO].of(Map.empty[Rate.Pair, Rate]))
         } yield {
-          val cache = new OneFrameCache[IO](Clock(), 10.days, cacheStorage)
+          val cache = new OneFrameCache[IO](Clock(), 1.minute, cacheStorage)
           new OneFrameMixed(cache, live)
         }
       }
