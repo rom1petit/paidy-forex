@@ -2,6 +2,7 @@ package forex
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import cats.implicits.showInterpolator
 import forex.Main.DummyToken
 import forex.config.{ApplicationConfig, HttpConfig, OneFrameClientConfig}
 import forex.domain.{Currency, Rate}
@@ -64,6 +65,16 @@ class ModuleSpec extends AnyFlatSpec {
     actual.status shouldBe Status.BadRequest
   }
 
+  it should "return BadRequest when currencies are the same" in new Scope {
+
+    val request =
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=USD"))
+        .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
+
+    val actual = module.httpApp.run(request).unsafeRunSync()
+    actual.status shouldBe Status.BadRequest
+  }
+
   it should "return Unauthorized when token is missing" in new Scope {
 
     val request =
@@ -109,7 +120,7 @@ class ModuleSpec extends AnyFlatSpec {
 
     val failing = new Algebra[IO] {
       override def get(pair: Rate.Pair): IO[Either[errors.Error, Rate]] =
-        IO.pure(Left(errors.Error.OneFrameLookupFailed(s"missing ${pair}")))
+        IO.pure(Left(errors.Error.OneFrameLookupFailed(show"Failed to lookup rate for `$pair`")))
     }
 
     override def module =

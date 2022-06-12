@@ -17,6 +17,7 @@ import tsec.common.SecureRandomId
 import java.time.{Instant, Period}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 object Main extends IOApp {
 
@@ -48,7 +49,7 @@ class Application[F[_]: Async] {
 
   def buildModule(config: ApplicationConfig): Resource[F, Module[F]] =
     for {
-      client <- BlazeClientBuilder[F].resource
+      client <- BlazeClientBuilder[F].withRequestTimeout(1.minute).withRetries(3).resource
       security <- Resource.eval(buildSecurity())
       cache <- Resource.eval(Ref[F].of(Map.empty[Rate.Pair, Rate]))
 

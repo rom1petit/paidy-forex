@@ -1,12 +1,14 @@
 package forex.services.rates.interpreters
 
-import cats.effect.kernel.Async
+import cats.effect.implicits.monadCancelOps
+import cats.effect.kernel.{Async, Outcome, Sync}
 import cats.implicits._
+import com.typesafe.scalalogging.StrictLogging
 import forex.config.OneFrameClientConfig
 import forex.domain.{Price, Rate, Timestamp}
 import forex.services.rates.Algebra
 import forex.services.rates.errors._
-import forex.services.rates.interpreters.OneFrameLive.{convert, getPairRatesRequest, unique}
+import forex.services.rates.interpreters.OneFrameLive.{convert, getPairRatesRequest, log, unique}
 import forex.services.rates.interpreters.Protocol._
 import org.http4s.Header.Raw
 import org.http4s.Method.GET
@@ -24,16 +26,29 @@ class OneFrameLive[F[_]: Async](
 
     val request = getPairRatesRequest[F](config.endpoint, config.token, pair)
 
-    client.run(request).use { response =>
-      response
-        .as[List[OneFrame]]
-        .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` rates not found")))
-        .map(_.flatMap(convert))
+    log(show"GET `$pair` rate from OneFrameService") {
+      client.run(request).use { response =>
+        response
+          .as[List[OneFrame]]
+          .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` rates not found")))
+          .map(_.flatMap(convert))
+      }
     }
   }
 }
 
-object OneFrameLive {
+object OneFrameLive extends StrictLogging {
+
+  def log[F[_]: Async, A](msg: String)(fa: F[A]): F[A] =
+    Sync[F].delay(logger.info(s"running $msg")) *>
+      fa.guaranteeCase {
+        case Outcome.Succeeded(_) =>
+          Sync[F].delay(logger.info(s"Succeed to $msg"))
+        case Outcome.Errored(e) =>
+          Sync[F].delay(logger.error(s"Failed to $msg", e))
+        case Outcome.Canceled() =>
+          Sync[F].delay(logger.warn(s"$msg canceled"))
+      }
 
   def convert(frame: OneFrame): Either[Error, Rate] =
     Rate
