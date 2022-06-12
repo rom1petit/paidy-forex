@@ -44,6 +44,16 @@ class ModuleSpec extends AnyFlatSpec {
     actual.status shouldBe Status.NotFound
   }
 
+  it should "return NotFound when missing parameter" in new Scope {
+
+    val request =
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=BTC"))
+        .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
+
+    val actual = module.httpApp.run(request).unsafeRunSync()
+    actual.status shouldBe Status.NotFound
+  }
+
   it should "return BadRequest when currency is unknown" in new Scope {
 
     val request =
@@ -73,6 +83,16 @@ class ModuleSpec extends AnyFlatSpec {
     actual.status shouldBe Status.Unauthorized
   }
 
+  it should "return InternalError when call fails" in new InternalErrorScope {
+
+    val request =
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+        .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
+
+    val actual = module.httpApp.run(request).unsafeRunSync()
+    actual.status shouldBe Status.InternalServerError
+  }
+
   trait Scope {
     val config =
       ApplicationConfig(
@@ -90,6 +110,17 @@ class ModuleSpec extends AnyFlatSpec {
     val failing = new Algebra[IO] {
       override def get(pair: Rate.Pair): IO[Either[errors.Error, Rate]] =
         IO.pure(Left(errors.Error.OneFrameLookupFailed(s"missing ${pair}")))
+    }
+
+    override def module =
+      new Module[IO](config, new Application[IO].buildSecurity().unsafeRunSync(), failing)
+  }
+
+  trait InternalErrorScope extends Scope {
+
+    val failing = new Algebra[IO] {
+      override def get(pair: Rate.Pair): IO[Either[errors.Error, Rate]] =
+        IO.raiseError(new Exception("BTOOOM !"))
     }
 
     override def module =

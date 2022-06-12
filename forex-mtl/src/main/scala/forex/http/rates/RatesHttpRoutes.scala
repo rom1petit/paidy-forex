@@ -4,6 +4,7 @@ package rates
 import cats.Applicative
 import cats.data.EitherT
 import cats.effect.Sync
+import cats.implicits.{ catsSyntaxApplicativeError, toFlatMapOps }
 import forex.domain.Currency
 import forex.http.rates.RatesHttpRoutes.EitherOps
 import forex.http.security.BearerTokenAuth.BearerTokenHandler
@@ -12,8 +13,8 @@ import forex.programs.rates.Protocol.GetRatesRequest
 import forex.programs.rates.errors.Error
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
-import org.http4s.{HttpRoutes, Response}
-import tsec.authentication.{TSecAuthService, _}
+import org.http4s.{ HttpRoutes, Response }
+import tsec.authentication.{ TSecAuthService, _ }
 
 class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesProgram[F]) extends Http4sDsl[F] {
 
@@ -30,16 +31,20 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
           from <- Currency.fromString(fromParam).eitherT[F]
           to <- Currency.fromString(toParam).eitherT[F]
           rate <- EitherT(rates.get(GetRatesRequest(from, to)))
+          response <- EitherT.right[Error](Ok(rate.asGetApiResponse))
         } yield {
-          rate.asGetApiResponse
-        }).foldF(err => rateError(err), res => Ok(res))
+          response
+        }).value.flatMap(Sync[F].fromEither).handleErrorWith(rateError)
     })
 
   val routes: HttpRoutes[F] = Router(
     prefixPath -> httpRoutes
   )
 
-  def rateError: PartialFunction[Throwable, F[Response[F]]] = {
+  /*
+    translate app error to http error
+   */
+  def rateError: Throwable => F[Response[F]] = {
     case e: Error.RateLookupFailed => NotFound(e.msg)
     case e: Error.IllegalArgument  => BadRequest(e.msg)
     case e                         => InternalServerError(e.getMessage)
