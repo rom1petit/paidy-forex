@@ -1,10 +1,10 @@
 package forex.services.rates.interpreters
 
 import cats.effect.unsafe.implicits.global
-import cats.effect.{ IO, Ref, Resource }
-import forex.domain.Rate.Pair
-import forex.domain.{ Currency, Rate }
+import cats.effect.{IO, Ref, Resource}
+import forex.domain.Rate
 import forex.programs.emulator.OneFrameServiceEmulator
+import forex.services.rates.interpreters.TestData.`USD/JPY`
 import forex.services.time.Clock
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -17,11 +17,9 @@ class OneFrameMixedIntegrationSpec extends AnyFlatSpec with OneFrameServiceEmula
 
     override def expiry: FiniteDuration = 5.minutes
 
-    val pair = Pair(Currency.USD, Currency.JPY)
-
     val data =
       oneFrameMixed
-        .use(service => fs2.Stream.repeatEval(service.get(pair)).take(100).compile.toList)
+        .use(service => fs2.Stream.repeatEval(service.get(`USD/JPY`)).take(100).compile.toList)
         .unsafeRunSync()
 
     data.size shouldBe 100

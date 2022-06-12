@@ -32,8 +32,16 @@ object Protocol {
 
   implicit val pairEncoder: Encoder[Pair] =
     deriveConfiguredEncoder[Pair]
-  implicit val pairDecoder: Decoder[Pair] =
-    deriveConfiguredDecoder[Pair]
+  implicit val pairDecoder: Decoder[Pair] = new Decoder[Pair] {
+    final def apply(c: HCursor): Decoder.Result[Pair] =
+      for {
+        from <- c.downField("from").as[Currency]
+        to <- c.downField("to").as[Currency]
+        pair <- Pair(from, to).leftMap(err => DecodingFailure(err.getMessage, Nil))
+      } yield {
+        pair
+      }
+  }
 
   implicit val rateEncoder: Encoder[Rate] =
     deriveConfiguredEncoder[Rate]

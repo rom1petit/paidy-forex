@@ -24,9 +24,9 @@ object Generator {
   val RatePairGen: Gen[Rate.Pair] =
     for {
       from <- CurrencyGen
-      to <- CurrencyGen
+      to <- CurrencyGen.filterNot(_ == from)
     } yield {
-      Rate.Pair(from, to)
+      Rate.Pair(from, to).toOption.get
     }
 
   val RateGen: Gen[Rate] = for {

@@ -28,19 +28,24 @@ class OneFrameLive[F[_]: Async](
       response
         .as[List[OneFrame]]
         .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` rates not found")))
-        .map(_.map(convert))
+        .map(_.flatMap(convert))
     }
   }
 }
 
 object OneFrameLive {
 
-  def convert(frame: OneFrame): Rate =
-    Rate(
-      Rate.Pair(frame.from, frame.to),
-      Price(frame.price),
-      Timestamp(frame.timeStamp)
-    )
+  def convert(frame: OneFrame): Either[Error, Rate] =
+    Rate
+      .Pair(frame.from, frame.to)
+      .leftMap(e => Error.OneFrameLookupFailed(e.getMessage))
+      .map { p =>
+        Rate(
+          p,
+          Price(frame.price),
+          Timestamp(frame.timeStamp)
+        )
+      }
 
   def unique[A](values: Iterable[A], ifEmpty: Error): Error Either A =
     values.headOption.toRight(ifEmpty)

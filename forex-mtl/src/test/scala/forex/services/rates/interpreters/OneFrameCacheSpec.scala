@@ -1,8 +1,8 @@
 package forex.services.rates.interpreters
 
-import forex.domain.Rate.Pair
-import forex.domain.{Currency, Price, Rate, Timestamp}
+import forex.domain.{Price, Rate, Timestamp}
 import forex.services.rates.errors.Error.OneFrameLookupFailed
+import forex.services.rates.interpreters.TestData.`USD/JPY`
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -16,7 +16,7 @@ class OneFrameCacheSpec extends AnyFlatSpec {
 
     val now = OffsetDateTime.parse("2022-06-08T22:08:44.621Z")
 
-    val rate = Rate(Pair(Currency.USD, Currency.JPY), Price(1.0), Timestamp(now))
+    val rate = Rate(`USD/JPY`, Price(1.0), Timestamp(now))
 
     OneFrameCache.invalidate(1.minute, now)(rate) shouldBe Right(rate)
   }
@@ -25,7 +25,7 @@ class OneFrameCacheSpec extends AnyFlatSpec {
 
     val now = OffsetDateTime.parse("2022-06-08T22:08:44.621Z")
 
-    val rate = Rate(Pair(Currency.USD, Currency.JPY), Price(1.0), Timestamp(now.minusMinutes((1))))
+    val rate = Rate(`USD/JPY`, Price(1.0), Timestamp(now.minusMinutes((1))))
 
     OneFrameCache.invalidate(1.minute, now)(rate) shouldBe Right(rate)
   }
@@ -35,7 +35,7 @@ class OneFrameCacheSpec extends AnyFlatSpec {
     val now = OffsetDateTime.parse("2022-06-08T22:08:44.621Z")
 
     val rate =
-      Rate(Pair(Currency.USD, Currency.JPY), Price(1.0), Timestamp(now.minusMinutes(1).minus(1, ChronoUnit.MILLIS)))
+      Rate(`USD/JPY`, Price(1.0), Timestamp(now.minusMinutes(1).minus(1, ChronoUnit.MILLIS)))
 
     OneFrameCache.invalidate(1.minute, now)(rate) shouldBe
       Left(OneFrameLookupFailed("Pair `USD/JPY` rate expired: `60001 ms` > `60000 ms`"))

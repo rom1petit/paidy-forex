@@ -4,8 +4,8 @@ package rates
 import cats.Applicative
 import cats.data.EitherT
 import cats.effect.Sync
-import cats.implicits.{ catsSyntaxApplicativeError, toFlatMapOps }
-import forex.domain.Currency
+import cats.implicits.{catsSyntaxApplicativeError, toFlatMapOps}
+import forex.domain.{Currency, Rate}
 import forex.http.rates.RatesHttpRoutes.EitherOps
 import forex.http.security.BearerTokenAuth.BearerTokenHandler
 import forex.programs.RatesProgram
@@ -13,8 +13,8 @@ import forex.programs.rates.Protocol.GetRatesRequest
 import forex.programs.rates.errors.Error
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
-import org.http4s.{ HttpRoutes, Response }
-import tsec.authentication.{ TSecAuthService, _ }
+import org.http4s.{HttpRoutes, Response}
+import tsec.authentication.{TSecAuthService, _}
 
 class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesProgram[F]) extends Http4sDsl[F] {
 
@@ -22,7 +22,7 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
   import Protocol._
   import QueryParams._
 
-  private[http] val prefixPath = "/rates"
+  private[http] val prefixPath = "/v1/rate"
 
   private val httpRoutes: HttpRoutes[F] = security
     .liftService(TSecAuthService {
@@ -30,7 +30,8 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
         (for {
           from <- Currency.fromString(fromParam).eitherT[F]
           to <- Currency.fromString(toParam).eitherT[F]
-          rate <- EitherT(rates.get(GetRatesRequest(from, to)))
+          pair <- Rate.Pair(from, to).eitherT[F]
+          rate <- EitherT(rates.get(GetRatesRequest(pair)))
           response <- EitherT.right[Error](Ok(rate.asGetApiResponse))
         } yield {
           response

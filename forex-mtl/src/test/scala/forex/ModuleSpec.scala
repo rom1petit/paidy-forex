@@ -22,7 +22,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return Ok with rates when valid request" in new Scope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=JPY"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
 
     (for {
@@ -37,7 +37,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return NotFound when rate lookup fail" in new FailingLookupScope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=JPY"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
@@ -47,7 +47,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return NotFound when missing parameter" in new Scope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=BTC"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=BTC"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
@@ -57,7 +57,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return BadRequest when currency is unknown" in new Scope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=BTC&to=ADA"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=BTC&to=ADA"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
@@ -67,7 +67,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return Unauthorized when token is missing" in new Scope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=JPY"))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
     actual.status shouldBe Status.Unauthorized
@@ -76,7 +76,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return Unauthorized when token is unknown" in new Scope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=JPY"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + "XYZ")))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
@@ -86,7 +86,7 @@ class ModuleSpec extends AnyFlatSpec {
   it should "return InternalError when call fails" in new InternalErrorScope {
 
     val request =
-      Request[IO](method = GET, uri = Uri.unsafeFromString("/rates?from=USD&to=JPY"))
+      Request[IO](method = GET, uri = Uri.unsafeFromString("/v1/rate?from=USD&to=JPY"))
         .withHeaders(Headers(Header.Raw(Authorization.name, "Bearer " + DummyToken.id)))
 
     val actual = module.httpApp.run(request).unsafeRunSync()
