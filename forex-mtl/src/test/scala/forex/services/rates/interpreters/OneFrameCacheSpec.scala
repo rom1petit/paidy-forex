@@ -1,7 +1,7 @@
 package forex.services.rates.interpreters
 
 import forex.domain.{Price, Rate, Timestamp}
-import forex.services.rates.errors.Error.OneFrameLookupFailed
+import forex.services.rates.errors.Error.NotFound
 import forex.services.rates.interpreters.TestData.`USD/JPY`
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
@@ -38,6 +38,6 @@ class OneFrameCacheSpec extends AnyFlatSpec {
       Rate(`USD/JPY`, Price(1.0), Timestamp(now.minusMinutes(1).minus(1, ChronoUnit.MILLIS)))
 
     OneFrameCache.invalidate(1.minute, now)(rate) shouldBe
-      Left(OneFrameLookupFailed("Pair `USD/JPY` rate expired: `60001 ms` > `60000 ms`"))
+      Left(NotFound("Pair `USD/JPY` rate expired: `60001 ms` > `60000 ms`"))
   }
 }

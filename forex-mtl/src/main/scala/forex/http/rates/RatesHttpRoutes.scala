@@ -54,7 +54,7 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
     translate app error to http error
    */
   def rateError(msg: String): Throwable => F[Response[F]] = {
-    case e: Error.RateLookupFailed =>
+    case e: Error.NotFound =>
       Sync[F].delay(logger.error(s"Failed to handle $msg", e)) *>
         NotFound(e.msg)
 
@@ -64,7 +64,7 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
 
     case e =>
       Sync[F].delay(logger.error(s"Failed to handle $msg", e)) *>
-        InternalServerError(e.getMessage)
+        InternalServerError("Rate lookup failed.")
   }
 }
 

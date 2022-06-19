@@ -26,7 +26,7 @@ class OneFrameCache[F[_]: Async](
   override def get(pair: Rate.Pair): F[Error Either Rate] =
     cache.get
       .map(_.get(pair))
-      .map(unique(_, Error.OneFrameLookupFailed(show"Pair `$pair` not found")))
+      .map(unique(_, Error.NotFound(show"Pair `$pair` not found")))
       .map(_.flatMap(invalidate(rateExpiry, clock.now())))
 }
 
@@ -36,7 +36,7 @@ object OneFrameCache {
     val age = Duration.between(rate.timestamp.value, now).toScala
 
     if (age > rateExpiry) {
-      Left(Error.OneFrameLookupFailed(show"Pair `${rate.pair}` rate expired: `${age.toMillis} ms` > `${rateExpiry.toMillis} ms`"))
+      Left(Error.NotFound(show"Pair `${rate.pair}` rate expired: `${age.toMillis} ms` > `${rateExpiry.toMillis} ms`"))
     } else {
       Right(rate)
     }

@@ -120,7 +120,7 @@ class ModuleSpec extends AnyFlatSpec {
 
     val failing = new Algebra[IO] {
       override def get(pair: Rate.Pair): IO[Either[errors.Error, Rate]] =
-        IO.pure(Left(errors.Error.OneFrameLookupFailed(show"Failed to lookup rate for `$pair`")))
+        IO.pure(Left(errors.Error.NotFound(show"Failed to lookup rate for `$pair`")))
     }
 
     override def module =
