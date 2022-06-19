@@ -30,7 +30,7 @@ class RatesHttpRoutes[F[_]: Sync](security: BearerTokenHandler[F], rates: RatesP
   private val httpRoutes: HttpRoutes[F] = security
     .liftService(TSecAuthService {
       case GET -> Root :? FromQueryParam(fromParam) +& ToQueryParam(toParam) asAuthed user =>
-        val msg = s"get rate $fromParam/$toParam by ${user.id}"
+        val msg = s"get rate `$fromParam/$toParam` by `${user.id}`"
 
         Sync[F].delay(logger.info(s"Handling $msg")) *>
           (for {
