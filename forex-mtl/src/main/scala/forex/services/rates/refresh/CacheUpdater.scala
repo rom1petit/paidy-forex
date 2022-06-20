@@ -11,7 +11,7 @@ import scala.concurrent.duration.DurationInt
 class CacheUpdater[F[_]: Async](oneFrameLive: OneFrameLive[F], oneFrameCache: OneFrameCache[F]) {
 
   def fill(): F[Either[errors.Error, Unit]] =
-    EitherT(oneFrameLive.list()).map(rates => rates.traverse(oneFrameCache.put)).void.value
+    EitherT(oneFrameLive.list()).semiflatTap(rates => rates.traverse(oneFrameCache.put)).void.value
 
   def update(): fs2.Stream[F, Unit] =
     fs2.Stream.repeatEval(fill() *> Async[F].sleep(2.minutes))
