@@ -5,10 +5,10 @@ import cats.effect.kernel.{ Async, Outcome, Sync }
 import cats.implicits._
 import com.typesafe.scalalogging.StrictLogging
 import forex.config.OneFrameClientConfig
-import forex.domain.{ Price, Rate, Timestamp }
+import forex.domain.{ Currency, Price, Rate, Timestamp }
 import forex.services.rates.Algebra
 import forex.services.rates.errors._
-import forex.services.rates.interpreters.OneFrameLive.{ convert, getPairRatesRequest, log, unique }
+import forex.services.rates.interpreters.OneFrameLive.{ convert, getPairRatesRequest, listRatesRequest, log, unique }
 import forex.services.rates.interpreters.Protocol._
 import org.http4s.Header.Raw
 import org.http4s.Method.GET
@@ -32,6 +32,18 @@ class OneFrameLive[F[_]: Async](
           .as[List[OneFrame]]
           .map(unique(_, Error.NotFound(show"Pair `$pair` rates not found")))
           .map(_.flatMap(convert))
+      }
+    }.handleError(err => Error.OneFrameLookupFailed(err.getMessage).asLeft)
+  }
+
+  def list(): F[Error Either List[Rate]] = {
+    val request = listRatesRequest[F](config.endpoint, config.token)
+
+    log(show"LIST rates from OneFrameService") {
+      client.run(request).use { response =>
+        response
+          .as[List[OneFrame]]
+          .map(_.traverse(convert))
       }
     }.handleError(err => Error.OneFrameLookupFailed(err.getMessage).asLeft)
   }
@@ -74,4 +86,15 @@ object OneFrameLive extends StrictLogging {
     Request[F](GET, uri).withHeaders(Headers(tokenHeader))
   }
 
+  val Pairs: List[Rate.Pair] =
+    Currency.Values.flatMap(from => Currency.Values.flatMap(Rate.Pair(from, _).toOption)).toList
+
+  def listRatesRequest[F[_]](base: Uri, token: String): Request[F] = {
+
+    val tokenHeader = Raw(CIString("token"), token)
+
+    val uri = base / "rates" withQueryParam ("pair", Pairs)
+
+    Request[F](GET, uri).withHeaders(Headers(tokenHeader))
+  }
 }

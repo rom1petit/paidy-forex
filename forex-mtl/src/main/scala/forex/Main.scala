@@ -8,9 +8,10 @@ import forex.domain.Rate
 import forex.http.security.BearerTokenAuth.BearerTokenHandler
 import forex.http.security.{BearerTokenAuth, User}
 import forex.services.RatesServices
-import fs2.Stream
+import forex.services.rates.refresh.CacheUpdater
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
+import org.http4s.server.Server
 import tsec.authentication.TSecBearerToken
 import tsec.common.SecureRandomId
 
@@ -22,7 +23,15 @@ import scala.concurrent.duration.DurationInt
 object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] =
-    new Application[IO].stream(ExecutionContext.global).compile.drain.as(ExitCode.Success)
+    new Application[IO]
+      .buildServer(ExecutionContext.global)
+      .flatMap {
+        case (server, updater) =>
+          // kick updater in background
+          updater.update().compile.drain.background *> Resource.pure(server)
+      }
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
 
   // Hardcoded User & Token for simplicity
 
@@ -47,31 +56,35 @@ class Application[F[_]: Async] {
       BearerTokenAuth.build[F](userStorage, tokenStorage)
     }
 
-  def buildModule(config: ApplicationConfig): Resource[F, Module[F]] =
+  def buildModule(config: ApplicationConfig): Resource[F, (Module[F], CacheUpdater[F])] =
     for {
       client <- BlazeClientBuilder[F].withRequestTimeout(1.minute).withRetries(3).resource
       security <- Resource.eval(buildSecurity())
       cache <- Resource.eval(Ref[F].of(Map.empty[Rate.Pair, Rate]))
 
     } yield {
-      val liveRatesService = RatesServices.mixed[F](
+      val liveRatesService = RatesServices.live(config.oneFrameClient, client)
+
+      val cacheRatesService = RatesServices.cache[F](
         forex.services.time.Clock(),
         config.rateExpiry,
-        cache,
-        config.oneFrameClient,
-        client
+        cache
       )
-      new Module[F](config, security, liveRatesService)
+
+      val updater = new CacheUpdater[F](liveRatesService, cacheRatesService)
+
+      new Module[F](config, security, cacheRatesService) -> updater
     }
 
-  def stream(ec: ExecutionContext): Stream[F, Unit] =
+  def buildServer(ec: ExecutionContext): Resource[F, (Server, CacheUpdater[F])] =
     for {
-      config <- Config.stream("app")
-      module <- Stream.resource(buildModule(config))
-      _ <- BlazeServerBuilder[F]
-            .withExecutionContext(ec)
-            .bindHttp(config.http.port, config.http.host)
-            .withHttpApp(module.httpApp)
-            .serve
-    } yield ()
+      config <- Config.resource("app")
+      modules <- buildModule(config)
+      (module, updater) = modules
+      server <- BlazeServerBuilder[F]
+                 .withExecutionContext(ec)
+                 .bindHttp(config.http.port, config.http.host)
+                 .withHttpApp(module.httpApp)
+                 .resource
+    } yield (server, updater)
 }

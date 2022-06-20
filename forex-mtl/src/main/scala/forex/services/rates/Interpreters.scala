@@ -12,17 +12,17 @@ import scala.concurrent.duration.FiniteDuration
 
 object Interpreters {
 
-  def cache[F[_]: Async](clock: Clock, rateExpiry: FiniteDuration, ref: Ref[F, Map[Rate.Pair, Rate]]): Algebra[F] =
+  def cache[F[_]: Async](clock: Clock, rateExpiry: FiniteDuration, ref: Ref[F, Map[Rate.Pair, Rate]]) =
     new OneFrameCache[F](clock, rateExpiry, ref)
 
-  def live[F[_]: Async](oneFrameClientConfig: OneFrameClientConfig, client: Client[F]): Algebra[F] =
+  def live[F[_]: Async](oneFrameClientConfig: OneFrameClientConfig, client: Client[F]) =
     new OneFrameLive[F](oneFrameClientConfig, client)
 
   def mixed[F[_]: Async](clock: Clock,
                          rateExpiry: FiniteDuration,
                          ref: Ref[F, Map[Rate.Pair, Rate]],
                          oneFrameClientConfig: OneFrameClientConfig,
-                         client: Client[F]): Algebra[F] =
+                         client: Client[F]) =
     new OneFrameMixed[F](
       new OneFrameCache[F](clock, rateExpiry, ref),
       new OneFrameLive[F](oneFrameClientConfig, client)

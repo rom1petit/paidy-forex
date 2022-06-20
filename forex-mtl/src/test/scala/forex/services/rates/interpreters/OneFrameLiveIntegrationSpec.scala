@@ -31,4 +31,15 @@ class OneFrameLiveIntegrationSpec extends AnyFlatSpec with OneFrameServiceEmulat
       }
       .unsafeRunSync()
   }
+
+  it should "successfully List rates from OneFrameService" in {
+
+    oneFrameLive
+      .use(service => service.list())
+      .map {
+        case Left(value) => fail(s"Unexpected error $value")
+        case Right(rates) => rates.size shouldBe OneFrameLive.Pairs.size
+      }
+      .unsafeRunSync()
+  }
 }

@@ -10,7 +10,7 @@ import forex.services.rates.interpreters.OneFrameCache.invalidate
 import forex.services.rates.interpreters.OneFrameLive.unique
 import forex.services.time.Clock
 
-import java.time.{ Duration, OffsetDateTime }
+import java.time.{Duration, OffsetDateTime}
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.DurationConverters._
 
@@ -23,9 +23,12 @@ class OneFrameCache[F[_]: Async](
   def put(rate: Rate): F[Unit] =
     cache.update(c => c + (rate.pair -> rate))
 
+  private def fromInverse(store: Map[Rate.Pair, Rate], pair: Rate.Pair): Option[Rate] =
+    store.get(pair.inverse()).map(_.inverse())
+
   override def get(pair: Rate.Pair): F[Error Either Rate] =
     cache.get
-      .map(_.get(pair))
+      .map(store => store.get(pair).orElse(fromInverse(store, pair)))
       .map(unique(_, Error.NotFound(show"Pair `$pair` not found")))
       .map(_.flatMap(invalidate(rateExpiry, clock.now())))
 }
